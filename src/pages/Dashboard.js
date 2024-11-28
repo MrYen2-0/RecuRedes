@@ -12,7 +12,7 @@ export default function Dashboard() {
   useEffect(() => {
     (async function () {
         const token = localStorage.getItem('token');
-        let response = await fetch(process.env.REACT_APP_API_URL + '/auth/token', {
+        let response = await fetch(process.env.REACT_APP_RED + '/auth/token', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -20,6 +20,7 @@ export default function Dashboard() {
             }
         });
         response = await response.json();
+        alert(response.message);
         if (response.success) {
             console.info("usuario valido");
         } else {
