@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const signale = require('signale');
 require('dotenv').config();
 
 // Configuración
@@ -11,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 // Base de datos simulada (en memoria)
-const users = [{email: "chiu@gmail.com", password: bcrypt.hashSync("hola")}];
+let users = [{email: "chiu@gmail.com", password: bcrypt.hashSync("hola")}];
 
 // Middleware
 app.use(express.json());
@@ -76,6 +77,7 @@ app.post('/auth/login', async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: 'Token validado',
+                email: decoded.email
             });
         } else {
             return res.status(401).json({
@@ -109,6 +111,49 @@ const authenticateToken = (req, res, next) => {
 app.get('/protected', authenticateToken, (req, res) => {
   res.status(200).json({ message: 'Acceso autorizado a ruta protegida.', user: req.user });
 });
+
+app.delete('/delete', (req, res) => {
+  let token = req.headers['authorization']?.split(' ')[1];
+  token = jwt.decode(token, JWT_SECRET);
+  signale.info("actualidad\n" + existe(token.email)); 
+  const userToRemove = users.findIndex((foundUser) => foundUser.email === token.email);
+  users.splice(userToRemove, 1);
+  signale.info("actualidad\n" + existe(token.email));
+  return res.status(200).json({
+      success: true,
+      message: "elemento borrado"
+  });
+});
+
+
+app.put('/edit', (req, res) => {
+  let token = req.headers['authorization']?.split(' ')[1];
+  token = jwt.decode(token, JWT_SECRET); 
+  const newEmail = req.body.email;
+  signale.info("actualidad\n" + existe(token.email));
+  users = users.map((user) =>
+      user.email === token.email ? { ...user, email: newEmail } : user
+  );
+  signale.star("actualidad nueva\n" + existe(token.email));
+  token.email = newEmail;
+  token = jwt.sign(token, JWT_SECRET);
+  return res.status(200).json({
+      success: true,
+      message: "usuario editado",
+      email: newEmail,
+      token
+  });
+});
+
+app.get('/', (req, res) => {
+  return res.status(200).json({
+      users
+  }); 
+});
+
+function existe(email) {
+  return users.findIndex((user) => user.email === email) !== -1;
+}
 
 // Iniciar el servidor
 app.listen(PORT, () => {
